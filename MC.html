@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            html {
+                background-color: aliceblue; 
+                font: 14px Verdana;
+                text-align: center;
+            }
+            h1 {
+                color:cadetblue;
+                text-shadow: 1px 3px 5px chartreuse;
+                
+            }
+            h2{
+                color:darkcyan;
+            }
+            #matrix_current_div {
+                margin-bottom: .1em;
+                margin-right: .6em;
+                color: rgb(20,20,200);
+                font: 15px Arial;
+            }
+            button {
+                font: 16px Impact;
+                color: darkblue;
+                background-color: yellowgreen;
+                border-radius: 5px;
+                    
+            }
+            body {
+                display: flex;
+                align-items: center;
+                flex-flow: column; 
+            }
+            #matrices {
+                display: flex;
+                flex-flow: row;
+            }
+            #initializer {
+                display:flex;
+                flex-flow:row;
+            }
+            input {
+                border: 1px solid black;
+                border-radius: .5em;
+                text-align: center;
+                font: 14px Verdana;
+                background-color: lightyellow;
+                
+            }
+            #slider {
+                background-color: aqua;
+            }
+            td {
+                border: 3px solid aliceblue;
+                padding: .5em;
+                border-radius: 5px;
+                margin: .2em;
+                background-color: brown;
+            }
+            #currentanswers {
+                padding: 1em;
+                white-space: nowrap;
+            }
+            table {
+                border-collapse: collapse;
+                border-radius: 4px;
+            }
+            #stochastic_stuff {
+                margin-right: 3em;
+            }
+            #matrices {
+                margin-bottom: 1em;
+            }
+            #calculatebutton {
+                margin-bottom: 4em;
+            }
+            #slider {
+                margin-right: 1.5em;
+            }
+            canvas {
+                margin-top: 1em;
+            }
+            button:hover {
+                border-color:darkblue;
+                border-radius: 5px;
+            }
+            input:hover{
+                border: 1px solid yellow;
+            }
+        </style>
+    </head>
+    <title>Markov Chain</title>
+    <h1>MARKOV CHAIN VISUALIZATION</h1>
+    <body id = "body">
+<!--
+        <script>
+            var x = 1;
+            document.getElementById("hi").innerHTML = "";
+        </script>
+-->
+        <div id = "initializer">
+            <div id = "matrix_current_div">Current matrix size has no value!</div>
+            <input id = "slider" type = "range" name = "matrixvalues" min = "2" max = "6" step = "1" value = "4" ></input>
+            <button id = "setvalue_button" onclick = "setValues(); addTextBox();">Set New Matrix Size</button>
+        </div>
+        <div id = "matrices"> 
+            <div id = stochastic_stuff>
+                <h2 id = "stochasticdiv"></h2>
+                <table id = "matrix" style = "width:50%">
+                </table>
+            </div>
+            <div id = "initial_value_stuff">
+                <h2 id = IVdiv> </h2>
+                <table id = "IVs" style = "width:50%">
+                </table>
+            </div>
+            
+        </div>
+        <div id = calculatebutton></div>
+        <div>
+            <table id = "currentanswers" style = "width:50%">
+            </table>
+        </div>
+        <canvas id = "canvas" width = "500" height = "250" style = "width:95%"></canvas>
+        <div id = "description_of_steady_state"></div>
+        
+        <script>
+        
+            function addTextBox(){
+            document.getElementById('matrix_current_div').innerHTML = 'Current Matrix size is ' +
+                document.getElementById('slider').value + ' x ' +
+                document.getElementById('slider').value +'.'; 
+            }
+        
+            function setValues() {
+                while (document.getElementById('matrix').hasChildNodes()) {
+                    document.getElementById('matrix').removeChild(
+                        document.getElementById('matrix').firstChild);
+                }
+                while(document.getElementById('IVs').hasChildNodes()) {
+                    document.getElementById('IVs').removeChild(
+                        document.getElementById('IVs').firstChild);
+                }
+                while(document.getElementById('currentanswers').hasChildNodes()) {
+                    document.getElementById('currentanswers').removeChild(document.getElementById('currentanswers').firstChild);
+                }
+                document.getElementById('canvas').getContext('2d').clearRect(0,0,canvas.width, canvas.height);
+                var row = document.getElementById('slider').value;
+                for (var x = 0; x < row; x++) {
+                    var newTableRow = document.createElement('tr');
+                    var idTR = document.createAttribute('id');
+                    idTR.value = "tr" + x;
+                    newTableRow.setAttributeNode(idTR);
+
+                    //set IV matrix
+                    var tr = document.createElement('tr');
+                    var td = document.createElement('td');
+                    var inputIV = document.createElement('input');
+                    var tdIVid = document.createAttribute('id');
+                    tdIVid.value = 'tdIV' + x;
+                    var inputIVID = document.createAttribute('id');
+                    var inputIVType = document.createAttribute('type');
+                    inputIVID.value = 'IVtextbox' + x;
+                    inputIVType.value = 'text';
+                    inputIV.setAttributeNode(inputIVID);
+                    inputIV.setAttributeNode(inputIVType);
+                    inputIV.value = 0;
+                    td.setAttributeNode(tdIVid);
+                    td.appendChild(inputIV);
+                    tr.appendChild(td);
+                    document.getElementById('IVs').appendChild(tr);
+
+                    for (var y = 0; y < row; y++) {
+                        var newTableColumn = document.createElement('td');
+                        var idTC = document.createAttribute('id');
+                        idTC.value = "tc" + y;
+                        newTableColumn.setAttributeNode(idTC);
+                        var input = document.createElement('input');
+                        var type = document.createAttribute('type');
+                        var idRC = document.createAttribute('id');
+                        var className = document.createAttribute('class');
+                        idRC.value = "r" + x + "c" + y;
+                        type.value = 'text';
+                        input.value = 0;
+                        className.value = 'columnclass' + y;
+                        newTableColumn.style.backgroundColor= "rgb(" + (255-((y+1)* 20)) +"," + (255-((y+2) * 30)) + "," + (255-((y+2)*40)) + ")";
+                        input.setAttributeNode(idRC);
+                        input.setAttributeNode(type);
+                        newTableColumn.setAttributeNode(className);
+                        newTableColumn.appendChild(input);
+                        newTableRow.appendChild(newTableColumn);
+                    }
+                document.getElementById('matrix').appendChild(newTableRow);
+                }
+
+                document.getElementById('calculatebutton').innerHTML = "";
+                document.getElementById('stochasticdiv').innerHTML = "Stochastic Matrix";
+                document.getElementById('IVdiv').innerHTML = "Initial Values"
+                var button = document.createElement('button');
+                button.innerHTML = "Calculate";
+                var buttonFunction = document.createAttribute('onclick');
+                buttonFunction.value = "calculate()";
+                button.setAttributeNode(buttonFunction);
+                document.getElementById('calculatebutton').appendChild(button);
+
+            }
+            function calculate() {
+                var nextIteration = new Array(4);
+                var total = 0;
+                while (document.getElementById('currentanswers').hasChildNodes()) {
+                    document.getElementById('currentanswers').removeChild(document.getElementById('currentanswers').childNodes[0]);
+                }
+                for (var x = 0; x < document.getElementById('slider').value; x++) {
+                    var dotProduct = 0;
+                    for (var y = 0; y < document.getElementById('slider').value; y++) {
+                        var d = parseFloat(document.getElementById("r" + x + "c" + y).value) * parseFloat(document.getElementById('IVtextbox' + y).value);
+                        dotProduct += d;
+                    }
+                    nextIteration[x] = dotProduct;
+                    total += nextIteration[x];
+                }
+                var canvas = document.getElementById('canvas');
+                var context = canvas.getContext('2d');
+                context.fillStyle = "rgb(230,230,255)";
+                context.fillRect(0, 0, canvas.width, canvas.height);
+                context.strokeStyle = "rgb(150,150, 220)";
+                context.strokeRect(0,0, canvas.width, canvas.height);
+                for (var x = 0; x < document.getElementById('slider').value; x++) {
+                    document.getElementById('IVtextbox' + x).value = nextIteration[x];
+                    context.fillStyle = document.getElementsByClassName('columnclass' + x).item(0).style.backgroundColor;
+                    var y = document.getElementById('slider').value;
+                    context.beginPath();
+                    context.arc(canvas.width*(x+0.5)/y , canvas.height/2, (canvas.width/(y*2.5))*(nextIteration[x]/total), 0, 6.28, false);
+                    context.closePath();
+                    context.fill();
+                }
+                var finalAnswerTableRow = document.createElement('tr');
+                var finalAnswerTableRowID = document.createAttribute('id'+x);
+                finalAnswerTableRowID.value = 'finaltablerow';
+                finalAnswerTableRow.setAttributeNode(finalAnswerTableRowID);
+                for (var x = 0; x < document.getElementById('slider').value; x++) {
+                    var finalAnswerTableColumn = document.createElement('td');
+                    //var finalAnswertext = document.createTextNode('Node ' + (x + 1) + ": " + nextIteration[x]);
+                    finalAnswerTableColumn.innerHTML = 'Node ' + (x + 1) + ": " + nextIteration[x];
+                    var classnameFinalAnswer = document.createAttribute('class');
+                    classnameFinalAnswer.value = 'columnclass' + x;
+                    finalAnswerTableColumn.style.backgroundColor = document.getElementsByClassName('columnclass' + x).item(0).style.backgroundColor;
+                    finalAnswerTableColumn.setAttributeNode(classnameFinalAnswer);
+                    //finalAnswerTablecolumn.appendChild(finalAnswertext);
+                    finalAnswerTableRow.appendChild(finalAnswerTableColumn);
+                }
+                document.getElementById("currentanswers").appendChild(finalAnswerTableRow);
+                document.getElementById('description_of_steady_state').innerHTML = 
+                    "A steady state solution is reached when <code> Px = x</code>, where <code>P</code> is the stochastic matrix and <code>x</code> is the initial values. Basically, the values do not change anymore. This means that:<br></br> <code> Px - x = 0<br></br> (P-I)x = 0<br></br></code> Or in other words, the null space of <code> (P-I)</code> is the steady state.<br></br> In this case, the steady state solution is <br></br>";
+            }
+//            function calculateSteadyState() {
+//                var difference = 10;
+//                var steadyState = new Array(document.getElementById('slider').value);
+//                for (var index = 0; index < s.length; index++) {
+//                    steadyState[index] = document.getElementById('IVtextbox' + index);
+//                }
+//                while (Math.abs(difference) > 0.0001) {
+//                    for (var z = 0; z < document.getElementById('slider').value; z++) {
+//                        var currentIteration = new Array(document.getElementById('slider').value);
+//                        for (var y = 0; y < document.getElementById('slider').value; y++) {
+//                            
+//                        }
+//                    }
+//                }
+//            }
+                
+            
+            
+        </script>
+    </body>
+    
+</html>
